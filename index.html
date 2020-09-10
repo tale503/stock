@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-cmn">
+  <head>
+    <meta charset="UTF-8">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+    <title>Hello World!</title>
+    <style>
+      body {
+        width: 100%;
+        height: 100%;
+        -webkit-app-region: drag;
+        color: #ffffff;
+        padding: 6px;
+        margin: 0;
+        box-sizing: border-box;
+        font-size: 12px;
+      }
+      #main {
+        color: #ffffff;
+      }
+      #main div {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main"></div>
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+  </body>
+</html>
