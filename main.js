@@ -1,20 +1,57 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path')
+const url = require('url');
 const _ = require('lodash');
 const util = require('util');
+const fs = require('fs');
 const request = require('request');
+const iconv = require('iconv-lite');
 
 const URL_API = 'http://qt.gtimg.cn/q='
 
+const PATH_USER_DATA = app.getPath('userData');
+
 let mainWindow;
+
+let stock_list = [];
+
+function checkPath(filePath) {
+  try {
+    fs.accessSync(filePath, fs.constants.R_OK | fs.constants.W_OK);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function getJsonStorage(k) {
+  let filePath = path.join(PATH_USER_DATA, `./${k}.json`);
+  if (!checkPath(filePath)) return null;
+  try {
+    return JSON.parse(await util.promisify(fs.readFile)(filePath, 'utf-8'));
+  } catch (e) {
+    fs.unlinkSync(filePath);
+  }
+}
+
+async function setJsonStorage(k, v) {
+  try {
+    await util.promisify(fs.writeFile)(path.join(PATH_USER_DATA, `./${k}.json`), JSON.stringify(v, null, 2));
+  } catch (e) {
+  }
+}
 
 async function HttpGet(code) {
   let _http = async () => {
     return await util.promisify(request)({
       url: `${URL_API}${code}`,
       method: 'get',
-      json: true
+      headers: {
+        "content-type": "application/json",
+      },
+      encoding: null,
+      json: false
     });
   };
   try {
@@ -23,7 +60,7 @@ async function HttpGet(code) {
     if (_.get(data, 'statusCode') !== 200) data = await _http();
     if (_.get(data, 'statusCode') !== 200) data = await _http();
     if (_.get(data, 'statusCode') === 200) {
-      return _.get(data, 'body');
+      return iconv.decode(_.get(data, 'body'), 'gb2312').toString();
     } else {
       logger.error(`HTTPGET_ERROR:${url}`);
     }
@@ -33,37 +70,56 @@ async function HttpGet(code) {
   }
 }
 
-async function getData(stockArr) {
+async function getData() {
+  let stockArr = await getJsonStorage('stock_data') || ['sh000001'];
   let list = [];
+  let url = '';
   for (let item of stockArr) {
-    const data = await HttpGet(item);
-    let arr = data.split('~');
-    const stock_name = arr[1];
-    const now_price = arr[3];
-    const yesterday_price = arr[4];
-    const today_price = arr[5];
-    const rate = ((now_price - yesterday_price) / yesterday_price * 100).toFixed(2);
-    list.push({
-      name: stock_name,
-      price: now_price,
-      rate: rate
-    })
+    url += `${item},`
   }
-  return list;
+  try {
+    const data = await HttpGet(url);
+    let list_arr = data.split(';') || [];
+    for (let item of list_arr.slice(0, list_arr.length - 1)) {
+      let arr = item.split('~');
+      const stock_name = arr[1];
+      const stock_code = _.trim(arr[0]).substring(2,10);
+      const now_price = arr[3];
+      const yesterday_price = arr[4];
+      const today_price = arr[5];
+      const rate = ((now_price - yesterday_price) / yesterday_price * 100).toFixed(2);
+      if (stock_name) {
+        list.push({
+          name: stock_name,
+          code: stock_code,
+          price: now_price,
+          rate: rate
+        })
+      }
+    }
+    if (list.length === 0 || (list.length === 1 && !list[0].name)) {
+      await setJsonStorage('stock_data', ['sh000001']);
+      await getData()
+    }
+    stock_list = list
+    return list;
+  } catch (e) {}
 }
 
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
+    title: 'stock',
     x: 0,
     y: 0,
-    width: 120,
-    height: 60,
+    width: 284,
+    height: 30,
     transparent: true,
     frame: false,
     resizable: true,
     alwaysOnTop: true,
     webPreferences: {
+      nodeIntegrationInSubFrames: true,
       nodeIntegration: true,
       webviewTag: true,
       preload: path.join(__dirname, 'preload.js')
@@ -80,7 +136,8 @@ function createWindow () {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+let child
+app.whenReady().then(async () => {
   createWindow()
   
   app.on('activate', function () {
@@ -97,13 +154,47 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit()
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-
 ipcMain.on('db', async (event, arg) => {
   try {
     if (arg.type === 'get_data') {
-      event.returnValue = await getData(arg.stock);
+      event.returnValue = await getData();
+    } else if (arg.type === 'open_child') {
+      child = new BrowserWindow({
+        title: 'stock',
+        parent: 'top',
+        show: false,
+        width: 300,
+        height: 400,
+        webPreferences: {
+          nodeIntegrationInSubFrames: true,
+          nodeIntegration: true,
+          webviewTag: true,
+          preload: path.join(__dirname, 'preload.js')
+        }
+      })
+      child.loadFile('child.html')
+      child.once('ready-to-show', () => {
+        child.show()
+        child.webContents.send('web',{type:'data'});
+      })
+    } else if (arg.type === 'set_data') {
+      let _data = await getJsonStorage('stock_data') || [];
+      if (_data && _data.length) {
+        _data.push(arg.value)
+      } else {
+        _data = [arg.value]
+      }
+      await setJsonStorage('stock_data', _data);
+      child.webContents.send('web',{type:'data'});
+      event.returnValue = await getData();
+    } else if (arg.type === 'del_data') {
+      let _data = await getJsonStorage('stock_data') || [];
+      if (_data && _data.length) {
+        _data = _.filter(_data, function(o) { return o !== arg.value })
+      }
+      await setJsonStorage('stock_data', _data);
+      child.webContents.send('web',{type:'data'});
+      event.returnValue = await getData();
     }
   } catch (e) {}
 })

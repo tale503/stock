@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-cmn">
+  <head>
+    <meta charset="UTF-8">
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+    <title>stock</title>
+    <style>
+      body {
+        width: 100%;
+        height: 100%;
+        color: #333333;
+        padding: 6px;
+        margin: 0;
+        box-sizing: border-box;
+        font-size: 12px;
+        background: #fff;  
+        position: relative;
+      }
+      .flex {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+      .flex-item {
+        flex: 1;
+        overflow: hidden;
+      }
+      .ipt-main {
+        width: 100%;
+        padding: 6px;
+        box-sizing: border-box;
+        height: 40px;
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 9;
+        background: #fff;
+      }
+      .label {
+        margin-right: 10px;
+      }
+      input {
+        border-radius: 4px;
+        height: 24px;
+        line-height: 24px;
+        font-size: 12px;
+        border: 1px solid #eeeeee;
+      }
+      .button {
+        width: 60px;
+        height: 24px;
+        line-height: 24px;
+        justify-content: center;
+        background: rgb(27, 110, 219);
+        color: #ffffff;
+        border-radius: 4px;
+        margin-left: 20px;
+        cursor: pointer;
+      }
+      .gap {
+        height: 40px;
+      }
+      #prop {
+        padding: 6px;
+      }
+      #prop li {
+        padding: 0 6px;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        height: 26px;
+      }
+      .del-btn {
+        width: 40px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        background: rgb(250, 44, 44);
+        color: #ffffff;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="flex ipt-main">
+        <div class="label">代码：</div>
+        <input class="flex-item" id="ipt" type="text" placeholder="请输入代码，如：sh000001">
+        <div class="flex button" id="add">添加</div>
+      </div>
+      <div class="gap"></div>
+      <div>
+        <ul id="prop"></ul>
+      </div>
+    </div>
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+
+  </body>
+</html>

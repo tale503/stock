@@ -4,7 +4,8 @@
   "description": "stock",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
   "repository": "https://github.com/tale503/stock",
   "keywords": [
@@ -14,13 +15,21 @@
     "tutorial",
     "demo"
   ],
-  "author": "GitHub",
+  "author": "tale",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^10.1.1"
+    "electron": "^10.1.1",
+    "electron-builder": "^22.8.0"
   },
   "dependencies": {
+    "iconv-lite": "^0.6.2",
     "lodash": "^4.17.20",
     "request": "^2.88.2"
+  },
+  "build": {
+    "appId": "your.id",
+    "mac": {
+      "category": "your.app.category.type"
+    }
   }
 }
