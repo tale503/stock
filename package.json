@@ -30,6 +30,28 @@
     "appId": "your.id",
     "mac": {
       "category": "your.app.category.type"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "ia32"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "ia32"
+          ]
+        },
+        {
+          "target": "dir",
+          "arch": [
+            "ia32"
+          ]
+        }
+      ]
     }
   }
 }
